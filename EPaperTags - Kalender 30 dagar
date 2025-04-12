@@ -1,0 +1,110 @@
+alias: EPaperTags - Kalender 30 dagar
+description: ""
+triggers:
+  - minutes: /30
+    trigger: time_pattern
+  - platform: state
+    entity_id: calendar.sophamtning
+conditions:
+  - condition: time
+    after: "05:00:00"
+    before: "23:00:00"
+actions:
+  - data:
+      start_date_time: "{{ now().replace(hour=0, minute=0, second=0) }}"
+      end_date_time: "{{ (now() + timedelta(days=30)).replace(hour=0, minute=0, second=0) }}"
+    target:
+      entity_id: "{{kalender}}"
+    response_variable: cal_all_30_days
+    action: calendar.get_events
+  - variables:
+      events_all: "{{ cal_all_30_days[kalender].events }}"
+      event_lines: >
+        {% set dagar = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag",
+        "Lördag", "Söndag"] %} {% set manader = ["Januari", "Februari", "Mars",
+        "April", "Maj", "Juni", "Juli", "Augusti", "September", "Oktober",
+        "November", "December"] %} {% set rader = namespace(list=[]) %} {% for
+        event in events_all[:6] | sort(attribute='start') %}
+          {% set date = as_datetime(event.start) %}
+          {% set tid = date.strftime("%H:%M") %}
+          {% set rad = dagar[date.weekday()] ~ " " ~ date.day ~ ". " ~ manader[date.month - 1] ~ " " ~ tid ~ ": " ~ event.summary.strip() %}
+          {% set rader.list = rader.list + [rad] %}
+        {% endfor %} {{ rader.list }}
+  - data:
+      rotate: 0
+      payload:
+        - type: text
+          value: "{{'Kalender kommande 30 dagar'}}"
+          font: "{{header_font}}"
+          x: "{{mid_x}}"
+          "y": 15
+          size: "{{header_font_size}}"
+          color: black
+          anchor: mm
+        - type: text
+          value: "{{ event_lines[0] if event_lines | length > 0 else '' }}"
+          font: "{{event_font}}"
+          x: "{{mid_x}}"
+          "y": "{{y_start}}"
+          size: "{{event_font_size}}"
+          anchor: mm
+          color: black
+        - type: text
+          value: "{{ event_lines[1] if event_lines | length > 1 else '' }}"
+          font: "{{event_font}}"
+          x: "{{mid_x}}"
+          "y": "{{y_offset * 1 + y_start}}"
+          size: "{{event_font_size}}"
+          anchor: mm
+          color: black
+        - type: text
+          value: "{{ event_lines[2] if event_lines | length > 2 else '' }}"
+          font: "{{event_font}}"
+          x: "{{mid_x}}"
+          "y": "{{y_offset * 2 + y_start}}"
+          size: "{{event_font_size}}"
+          anchor: mm
+          color: black
+        - type: text
+          value: "{{ event_lines[3] if event_lines | length > 3 else '' }}"
+          font: "{{event_font}}"
+          x: "{{mid_x}}"
+          "y": "{{y_offset * 3 + y_start}}"
+          size: "{{event_font_size}}"
+          anchor: mm
+          color: black
+        - type: text
+          value: "{{ event_lines[4] if event_lines | length > 4 else '' }}"
+          font: "{{event_font}}"
+          x: "{{mid_x}}"
+          "y": "{{y_offset * 4 + y_start}}"
+          size: "{{event_font_size}}"
+          anchor: mm
+          color: black
+        - type: text
+          value: "{{ event_lines[5] if event_lines | length > 5 else '' }}"
+          font: "{{event_font}}"
+          x: "{{mid_x}}"
+          y": "{{y_offset * 5 + y_start}}"
+          size: "{{event_font_size}}"
+          anchor: mm
+          color: black
+      dry-run: false
+    target:
+      device_id:
+        - "{{tag_id}}"
+    action: open_epaper_link.drawcustom
+mode: single
+variables:
+  kalender: calendar.sophamtning
+  header_text: Kalender kommande 30 dagar
+  header_font: /media/arialbd.ttf
+  header_font_size: 25
+  event_font: /media/Georgia.ttf
+  event_font_size: 22
+  font_size: 22
+  tag_id: 0511574a6XXXXXXX99aa7025fb37
+  tag_width: 522
+  mid_x: "{{tag_width/2 | int}}"
+  y_start: 42
+  y_offset: 22
